@@ -4,3 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.86"
+thiserror = "1.0.63"
+
+[profile.release-lto]
+inherits = "release"
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
