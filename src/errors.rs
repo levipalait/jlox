@@ -16,13 +16,10 @@ pub enum ArgumentError {
 pub enum ScanError {
     #[error("At least 1 error occurred while scanning. Aborted!")]
     HadError,
-    #[error("Cannot access source code character {current} on line {line}")]
-    CharacterAccessError {
-        current: usize,
-        line: usize,
-    },
-    #[error("Unexpected character on line {line}")]
-    UnexpectedCharacter {
-        line: usize,
-    }
+    #[error("Cannot access source code character on line {0}")]
+    CharacterAccessError(usize),
+    #[error("Unexpected character on line {0}")]
+    UnexpectedCharacter(usize),
+    #[error("Unterminated string on line {0}")]
+    UnterminatedString(usize),
 }

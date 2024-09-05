@@ -1,10 +1,20 @@
 use anyhow::Result;
 
+use crate::token::Literal;
 use crate::token::Token;
-use crate::token_type::TokenType;
+use crate::token::TokenType;
 use crate::ScanError;
 
-pub struct Scanner {
+/// Only public function of the scanner module. It takes in a raw source code String
+/// and spits out a Vector of freshly baked Tokens. It is the *blackbox interface* of the
+/// scanner module.
+pub fn scan_tokens(source: String) -> Result<Vec<Token>> {
+    let scanner = Scanner::new(source);
+    scanner.scan_tokens() // No propagation needed because it returns a Result
+}
+
+/// Contraption that holds the necessary data for the scanning process.
+struct Scanner {
     source: String,
     tokens: Vec<Token>,
     start: usize,   // First char of lexeme being scanned
@@ -16,7 +26,7 @@ impl Scanner {
     /// Creates a new Scanner by passing in the source code as a `String`.
     /// It also sets counters to default values and initializes the tokens
     /// Vector.
-    pub fn new(source: String) -> Self {
+    fn new(source: String) -> Self {
         Self {
             source: source,
             tokens: Vec::new(),
@@ -33,7 +43,7 @@ impl Scanner {
     /// # Move occurence
     /// When `scan_tokens` is called, the scanner gets consumed and only the Vector
     /// of Tokens remains. Scanner cannot be used again (it probably doesn't need to)
-    pub fn scan_tokens(mut self) -> Result<Vec<Token>> {
+    fn scan_tokens(mut self) -> Result<Vec<Token>> {
         let mut had_error: bool = false;
 
         while !self.is_at_end() {
@@ -58,51 +68,51 @@ impl Scanner {
         }
     }
 
-    /// Function that scans one Token at a time and spits it out to be collected
+    /// Function that scans one Token at a time and adds it to the Token Vector of the Scanner struct
     fn scan_token(&mut self) -> Result<()> {
         // Get the character that is in advance and return an Error if it fails
         let c = self.advance()?;
 
         match c {
             // Single-character tokens
-            '(' => self.add_token(TokenType::LeftParen),
-            ')' => self.add_token(TokenType::RightParen),
-            '{' => self.add_token(TokenType::LeftBrace),
-            '}' => self.add_token(TokenType::RightBrace),
-            ',' => self.add_token(TokenType::Comma),
-            '.' => self.add_token(TokenType::Dot),
-            '-' => self.add_token(TokenType::Minus),
-            '+' => self.add_token(TokenType::Plus),
-            ';' => self.add_token(TokenType::Semicolon),
-            '*' => self.add_token(TokenType::Star),
+            '(' => self.add_token(TokenType::LeftParen)?,
+            ')' => self.add_token(TokenType::RightParen)?,
+            '{' => self.add_token(TokenType::LeftBrace)?,
+            '}' => self.add_token(TokenType::RightBrace)?,
+            ',' => self.add_token(TokenType::Comma)?,
+            '.' => self.add_token(TokenType::Dot)?,
+            '-' => self.add_token(TokenType::Minus)?,
+            '+' => self.add_token(TokenType::Plus)?,
+            ';' => self.add_token(TokenType::Semicolon)?,
+            '*' => self.add_token(TokenType::Star)?,
 
             // One or two character tokens
             '!' => {
                 if self.match_advance('=')? {
-                    self.add_token(TokenType::BangEqual);
+                    self.add_token(TokenType::BangEqual)?;
                 } else {
-                    self.add_token(TokenType::Bang);
+                    self.add_token(TokenType::Bang)?;
                 }
             }
             '=' => {
                 if self.match_advance('=')? {
-                    self.add_token(TokenType::EqualEqual);
+                    self.add_token(TokenType::EqualEqual)?;
                 } else {
-                    self.add_token(TokenType::Equal);
+                    self.add_token(TokenType::Equal)?;
                 }
             }
             '<' => {
                 if self.match_advance('=')? {
-                    self.add_token(TokenType::LessEqual);
+                    self.add_token(TokenType::LessEqual)?;
                 } else {
-                    self.add_token(TokenType::Less);
+                    self.add_token(TokenType::Less)?;
                 }
             }
             '>' => {
                 if self.match_advance('=')? {
-                    self.add_token(TokenType::GreaterEqual);
+                    self.add_token(TokenType::GreaterEqual)?;
                 } else {
-                    self.add_token(TokenType::Greater);
+                    self.add_token(TokenType::Greater)?;
                 }
             }
 
@@ -112,20 +122,38 @@ impl Scanner {
                     while !self.is_at_end() && self.peek()? != '\n' {
                         self.advance()?;
                     }
-                    // If the last char was \n, the program does not advance.
-                    // So, we have to call it one more time.
-                    self.advance()?;
                 } else {
-                    self.add_token(TokenType::Slash);
+                    self.add_token(TokenType::Slash)?;
                 }
-            },
+            }
 
             // Useless characters
-            ' ' | '\r' | '\t' => {}, // do nothing, just advance forward
+            ' ' | '\r' | '\t' => {} // do nothing, just advance forward
             '\n' => self.line += 1,
 
+            // Strings
+            '"' => {
+                while !self.is_at_end() && self.peek()? != '"' {
+                    if self.peek()? == '\n' {
+                        self.line += 1;
+                    }
 
-            _ => return Err(ScanError::UnexpectedCharacter { line: self.line }.into()),
+                    if self.is_at_end() {
+                        return Err(ScanError::UnterminatedString(self.line).into());
+                    }
+
+                    self.advance()?; // The closing "
+
+                    let value = self
+                        .source
+                        .get((self.start + 1)..(self.current - 1))
+                        .ok_or(ScanError::CharacterAccessError(self.line))?
+                        .to_string();
+                    self.add_token_literal(TokenType::String, Literal::String(value))?;
+                }
+            }
+
+            _ => return Err(ScanError::UnexpectedCharacter(self.line).into()),
         }
         Ok(())
     }
@@ -157,23 +185,34 @@ impl Scanner {
         self.source
             .chars()
             .nth(self.current)
-            .ok_or(ScanError::CharacterAccessError {
-                current: self.current,
-                line: self.line,
-            }.into())
+            .ok_or(ScanError::CharacterAccessError(self.line).into())
     }
 
-    /// Adds a token without any literal
-    fn add_token(&mut self, token_type: TokenType) {
-        let lexeme_text = &self.source[self.start..self.current];
-        self.tokens.push(Token::new(
-            token_type,
-            String::from(lexeme_text),
-            None,
-            self.line,
-        ));
+    /// Adds a `Token` to the token vector without any literal
+    fn add_token(&mut self, token_type: TokenType) -> Result<()> {
+        let lexeme_text = self.get_lexeme_text()?;
+        let token = Token::new(token_type, lexeme_text, None, self.line);
+        self.tokens.push(token);
+        Ok(())
     }
 
+    /// Adds a `Token` to the token vector with a literal
+    fn add_token_literal(&mut self, token_type: TokenType, literal: Literal) -> Result<()> {
+        let lexeme_text = self.get_lexeme_text()?;
+        let token = Token::new(token_type, lexeme_text, Some(literal), self.line);
+        self.tokens.push(token);
+        Ok(())
+    }
+
+    fn get_lexeme_text(&self) -> Result<String> {
+        let text = self
+            .source
+            .get(self.start..self.current)
+            .ok_or(ScanError::CharacterAccessError(self.line))?;
+        Ok(text.to_string())
+    }
+
+    /// Checks if the `current` pointer is at the end of the source String
     fn is_at_end(&self) -> bool {
         self.current >= self.source.len()
     }

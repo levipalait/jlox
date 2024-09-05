@@ -1,14 +1,11 @@
 use std::io::Write;
 use anyhow::Result;
 
-use scanner::Scanner;
 use crate::errors::*;
 
 mod scanner;
 mod errors;
-mod token_type;
 mod token;
-mod literal;
 
 /// Takes in command line arguments and decides whether to run 
 /// jlox on a source file or to open the prompt mode. If nothing
@@ -61,8 +58,7 @@ fn run_prompt() -> Result<()> {
 /// process on it.
 fn run(source: String) -> Result<()> {
     
-    let scanner = Scanner::new(source);
-    let tokens = scanner.scan_tokens()?;
+    let tokens = scanner::scan_tokens(source)?;
 
     for token in tokens {
         println!("{}", token);
