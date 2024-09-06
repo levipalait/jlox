@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 /// A Token is a piece of String that is parsed from the source code.
 /// It gives it it's meaning.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     token_type: TokenType,
     lexeme: String,
@@ -30,14 +30,14 @@ impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.literal {
             // Since literal can be Some or None, we have to cover both states
-            Some(lit) => write!(f, "{} {} {}", self.token_type, self.lexeme, lit),
-            None => write!(f, "{} {} None", self.token_type, self.lexeme),
+            Some(lit) => write!(f, "{} {} {} {}", self.token_type, self.lexeme, lit, self.line),
+            None => write!(f, "{} {} None {}", self.token_type, self.lexeme, self.line),
         }
     }
 }
 
 /// All the different token types that a `Token` could possibly have
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen, RightParen, LeftBrace, RightBrace,
@@ -105,7 +105,7 @@ impl Display for TokenType {
 
 /// There are two different literal types: String literals and Number literals.
 /// Those can be represented using the Literal enum.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Literal {
     String(String),
     Number(f64),

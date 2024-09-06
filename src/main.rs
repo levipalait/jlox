@@ -18,13 +18,13 @@ fn main() -> Result<()> {
 
     // Check argument vector length to either run a script
     // from a source file or run the prompt mode of jlox
-    if argc > 2 {
-        Err(ArgumentError::InvalidArgs.into())// Return an error if argc doesn't match desired length
-    } else if argc == 2 {
-        let file_path = argv.get(1).ok_or(ArgumentError::ArgAccessError)?.to_owned();
-        run_file(file_path) // Return the Result of the run_file function
-    } else {
-        run_prompt() // Return the Result of the run_prompt function
+    match argc {
+        2 => {
+            let file_path = argv.get(1).ok_or(ArgumentError::ArgAccessError)?.to_string();
+            run_file(file_path)
+        },
+        1 => run_prompt(),
+        _ => Err(ArgumentError::InvalidArgs.into())
     }
 }
 

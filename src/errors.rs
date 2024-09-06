@@ -4,9 +4,9 @@ use thiserror::Error;
 /// regarding command line arguments.
 #[derive(Debug, Error)]
 pub enum ArgumentError {
-    #[error("Invalid Arguments. Usage: jlox [script path]")]
+    #[error("Argument Error: Invalid Arguments. Usage: jlox [script path]")]
     InvalidArgs,
-    #[error("Cannot access command line arguments!")]
+    #[error("Argument Error: Cannot access command line arguments!")]
     ArgAccessError,
 }
 
@@ -14,12 +14,12 @@ pub enum ArgumentError {
 /// this Error type can be used.
 #[derive(Debug, Error)]
 pub enum ScanError {
-    #[error("At least 1 error occurred while scanning. Aborted!")]
+    #[error("Scan Error: At least 1 error occurred while scanning. Aborted!")]
     HadError,
-    #[error("Cannot access source code character on line {0}")]
+    #[error("Scan Error: Cannot access source code character on line {0}")]
     CharacterAccessError(usize),
-    #[error("Unexpected character on line {0}")]
-    UnexpectedCharacter(usize),
-    #[error("Unterminated string on line {0}")]
+    #[error("Scan Error: Unexpected character {0} on line {1}")]
+    UnexpectedCharacter(char, usize),
+    #[error("Scan Error: Unterminated string on line {0}")]
     UnterminatedString(usize),
 }

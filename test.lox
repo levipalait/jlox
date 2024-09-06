@@ -1,4 +1,4 @@
-// This is just a test file for testing lox code
-// this is a comment
-(( )) {} // grouping stuff
-!*+-/=<> <= == // operators
+print "Hello, World!";
+for (var i = 0; i < 10; i = i + 1) {
+    print i;
+}
