@@ -1,4 +1,8 @@
+// External dependencies
 use std::fmt::{Debug, Display};
+
+// Internal dependencies
+use crate::literal::Literal;
 
 /// A Token is a piece of String that is parsed from the source code.
 /// It gives it it's meaning.
@@ -23,6 +27,22 @@ impl Token {
             literal,
             line,
         }
+    }
+
+    pub fn token_type(&self) -> TokenType {
+        self.token_type.clone()
+    }
+
+    pub fn lexeme(&self) -> String {
+        self.lexeme.clone()
+    }
+
+    pub fn literal(&self) -> Option<Literal> {
+        self.literal.clone()
+    }
+
+    pub fn line(&self) -> usize {
+        self.line
     }
 }
 
@@ -57,65 +77,9 @@ pub enum TokenType {
     Eof,
 }
 
+// We just use the Debug representation when displaying the TokenType
 impl Display for TokenType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TokenType::LeftParen => write!(f, "LeftParen"),
-            TokenType::RightParen => write!(f, "RightParen"),
-            TokenType::LeftBrace => write!(f, "LeftBrace"),
-            TokenType::RightBrace => write!(f, "RightBrace"),
-            TokenType::Comma => write!(f, "Comma"),
-            TokenType::Dot => write!(f, "Dot"),
-            TokenType::Minus => write!(f, "Minus"),
-            TokenType::Plus => write!(f, "Plus"),
-            TokenType::Semicolon => write!(f, "Semicolon"),
-            TokenType::Slash => write!(f, "Slash"),
-            TokenType::Star => write!(f, "Star"),
-            TokenType::Bang => write!(f, "Bang"),
-            TokenType::BangEqual => write!(f, "BangEqual"),
-            TokenType::Equal => write!(f, "Equal"),
-            TokenType::EqualEqual => write!(f, "EqualEqual"),
-            TokenType::Greater => write!(f, "Greater"),
-            TokenType::GreaterEqual => write!(f, "GreaterEqual"),
-            TokenType::Less => write!(f, "Less"),
-            TokenType::LessEqual => write!(f, "LessEqual"),
-            TokenType::Identifier => write!(f, "Identifier"),
-            TokenType::String => write!(f, "String"),
-            TokenType::Number => write!(f, "Number"),
-            TokenType::And => write!(f, "And"),
-            TokenType::Class => write!(f, "Class"),
-            TokenType::Else => write!(f, "Else"),
-            TokenType::False => write!(f, "False"),
-            TokenType::Fun => write!(f, "Fun"),
-            TokenType::For => write!(f, "For"),
-            TokenType::If => write!(f, "If"),
-            TokenType::Nil => write!(f, "Nil"),
-            TokenType::Or => write!(f, "Or"),
-            TokenType::Print => write!(f, "Print"),
-            TokenType::Return => write!(f, "Return"),
-            TokenType::Super => write!(f, "Super"),
-            TokenType::This => write!(f, "This"),
-            TokenType::True => write!(f, "True"),
-            TokenType::Var => write!(f, "Var"),
-            TokenType::While => write!(f, "While"),
-            TokenType::Eof => write!(f, "Eof"),
-        }
-    }
-}
-
-/// There are two different literal types: String literals and Number literals.
-/// Those can be represented using the Literal enum.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Literal {
-    String(String),
-    Number(f64),
-}
-
-impl Display for Literal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::String(s) => write!(f, "{}", s),
-            Self::Number(n) => write!(f, "{}", n),
-        }
+        write!(f, "{:?}", self)
     }
 }

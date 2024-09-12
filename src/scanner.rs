@@ -1,9 +1,10 @@
+// External dependencies
 use anyhow::Result;
 
-use crate::token::Literal;
-use crate::token::Token;
-use crate::token::TokenType;
-use crate::ScanError;
+// Internal dependencies
+use crate::literal::Literal;
+use crate::token::{Token, TokenType};
+use crate::errors::ScanError;
 
 /// Only public function of the scanner module. It takes in a raw source code String
 /// and spits out a Vector of freshly baked Tokens. It is the *blackbox interface* of the
@@ -210,9 +211,14 @@ impl Scanner {
         Ok(text.to_string())
     }
 
-    /// Checks if the `current` pointer is at the end of the source String
+    /// Checks if the `current` pointer is at the end or above of the source String
     fn is_at_end(&self) -> bool {
         self.current >= self.source.len()
+    }
+
+    /// Checks if the current pointer could advance one and then peek
+    fn can_peek_next(&self) -> bool {
+        self.current < (self.source.len() - 1)
     }
 
     /// Gets called when scan_token encounters a " character, so the
@@ -243,13 +249,17 @@ impl Scanner {
     /// Number that the characters represent can be parsed and correctly
     /// saved as a literal token.
     fn handle_number(&mut self) -> Result<()> {
-        while self.peek()?.is_numeric() {
+        while !self.is_at_end() && self.peek()?.is_numeric() {
             self.advance()?;
         }
 
-        if self.peek()? == '.' && self.peek_next()?.is_numeric() {
+        if !self.is_at_end()
+            && self.peek()? == '.'
+            && self.can_peek_next()
+            && self.peek_next()?.is_numeric()
+        {
             self.advance()?; // Consume the .
-            while self.peek()?.is_numeric() {
+            while !self.is_at_end() && self.peek()?.is_numeric() {
                 self.advance()?;
             }
         }
@@ -261,19 +271,27 @@ impl Scanner {
     }
 
     fn handle_identifier(&mut self) -> Result<()> {
-        while self.peek()?.is_alphanumeric() {
+        while !self.is_at_end() && self.peek()?.is_alphanumeric() {
             self.advance()?;
         }
 
         let text = self.get_lexeme_text()?;
 
+        // First matches if the lexeme is a keyword, then if it's a literal keyword.
+        // If it's neither, it's just an identifier.
         match match_keyword(&text) {
-            Some(token_type) => self.add_token(token_type),
+            Some(token_type) => match token_type {
+                TokenType::True => self.add_token_literal(token_type, Literal::True),
+                TokenType::False => self.add_token_literal(token_type, Literal::False),
+                TokenType::Nil => self.add_token_literal(token_type, Literal::Nil),
+                _ => self.add_token(token_type),
+            },
             None => self.add_token(TokenType::Identifier),
         }
     }
 }
 
+/// Matches a keyword to a TokenType. If the keyword is not found, it returns None.
 fn match_keyword(lexeme: &str) -> Option<TokenType> {
     match lexeme {
         "and" => Some(TokenType::And),
@@ -295,6 +313,8 @@ fn match_keyword(lexeme: &str) -> Option<TokenType> {
         _ => None,
     }
 }
+
+/// ---------- Tests for the Scanner module ----------
 
 #[cfg(test)]
 mod tests {
@@ -321,5 +341,139 @@ mod tests {
 
         let cmp_token = Token::new(TokenType::Eof, String::new(), None, 1);
         assert_eq!(*tokens.get(3).unwrap(), cmp_token);
+    }
+
+    #[test]
+    fn keyword_scan() {
+        let source = "var x = true;\r\nclass TestClass {\r\n    testMethod(s) {\r\n        print s;\r\n    }\r\n}".to_string();
+        let tokens = scan_tokens(source).expect("Token Scanning failed!");
+
+        let cmp_token = Token::new(TokenType::Var, "var".to_string(), None, 1);
+        assert_eq!(*tokens.get(0).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Identifier, "x".to_string(), None, 1);
+        assert_eq!(*tokens.get(1).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Equal, "=".to_string(), None, 1);
+        assert_eq!(*tokens.get(2).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::True, "true".to_string(), None, 1);
+        assert_eq!(*tokens.get(3).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Semicolon, ";".to_string(), None, 1);
+        assert_eq!(*tokens.get(4).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Class, "class".to_string(), None, 2);
+        assert_eq!(*tokens.get(5).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Identifier, "TestClass".to_string(), None, 2);
+        assert_eq!(*tokens.get(6).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::LeftBrace, "{".to_string(), None, 2);
+        assert_eq!(*tokens.get(7).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Identifier, "testMethod".to_string(), None, 3);
+        assert_eq!(*tokens.get(8).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::LeftParen, "(".to_string(), None, 3);
+        assert_eq!(*tokens.get(9).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Identifier, "s".to_string(), None, 3);
+        assert_eq!(*tokens.get(10).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::RightParen, ")".to_string(), None, 3);
+        assert_eq!(*tokens.get(11).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::LeftBrace, "{".to_string(), None, 3);
+        assert_eq!(*tokens.get(12).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Print, "print".to_string(), None, 4);
+        assert_eq!(*tokens.get(13).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Identifier, "s".to_string(), None, 4);
+        assert_eq!(*tokens.get(14).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Semicolon, ";".to_string(), None, 4);
+        assert_eq!(*tokens.get(15).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::RightBrace, "}".to_string(), None, 5);
+        assert_eq!(*tokens.get(16).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::RightBrace, "}".to_string(), None, 6);
+        assert_eq!(*tokens.get(17).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Eof, String::new(), None, 6);
+        assert_eq!(*tokens.get(18).unwrap(), cmp_token);
+    }
+
+    #[test]
+    fn number_scan() {
+        let source = "123 45.67".to_string();
+        let tokens = scan_tokens(source).expect("Token Scanning failed!");
+
+        let cmp_token = Token::new(
+            TokenType::Number,
+            "123".to_string(),
+            Some(Literal::Number(123.0)),
+            1,
+        );
+        assert_eq!(*tokens.get(0).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(
+            TokenType::Number,
+            "45.67".to_string(),
+            Some(Literal::Number(45.67)),
+            1,
+        );
+        assert_eq!(*tokens.get(1).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Eof, String::new(), None, 1);
+        assert_eq!(*tokens.get(2).unwrap(), cmp_token);
+    }
+
+    #[test]
+    fn string_scan() {
+        let source = "\"Hello, World!\"".to_string();
+        let tokens = scan_tokens(source).expect("Token Scanning failed!");
+
+        let cmp_token = Token::new(
+            TokenType::String,
+            "\"Hello, World!\"".to_string(),
+            Some(Literal::String("Hello, World!".to_string())),
+            1,
+        );
+        assert_eq!(*tokens.get(0).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Eof, String::new(), None, 1);
+        assert_eq!(*tokens.get(1).unwrap(), cmp_token);
+    }
+
+    #[test]
+    fn comment_scan() {
+        let source = "// This is a comment\nvar x = 42;".to_string();
+        let tokens = scan_tokens(source).expect("Token Scanning failed!");
+
+        let cmp_token = Token::new(TokenType::Var, "var".to_string(), None, 2);
+        assert_eq!(*tokens.get(0).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Identifier, "x".to_string(), None, 2);
+        assert_eq!(*tokens.get(1).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Equal, "=".to_string(), None, 2);
+        assert_eq!(*tokens.get(2).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(
+            TokenType::Number,
+            "42".to_string(),
+            Some(Literal::Number(42.0)),
+            2,
+        );
+        assert_eq!(*tokens.get(3).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Semicolon, ";".to_string(), None, 2);
+        assert_eq!(*tokens.get(4).unwrap(), cmp_token);
+
+        let cmp_token = Token::new(TokenType::Eof, String::new(), None, 2);
+        assert_eq!(*tokens.get(5).unwrap(), cmp_token);
     }
 }
