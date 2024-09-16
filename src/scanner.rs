@@ -358,7 +358,7 @@ mod tests {
         let cmp_token = Token::new(TokenType::Equal, "=".to_string(), None, 1);
         assert_eq!(*tokens.get(2).unwrap(), cmp_token);
 
-        let cmp_token = Token::new(TokenType::True, "true".to_string(), None, 1);
+        let cmp_token = Token::new(TokenType::True, "true".to_string(), Some(Literal::True), 1);
         assert_eq!(*tokens.get(3).unwrap(), cmp_token);
 
         let cmp_token = Token::new(TokenType::Semicolon, ";".to_string(), None, 1);
