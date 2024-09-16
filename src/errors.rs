@@ -1,6 +1,9 @@
 // External dependencies
 use thiserror::Error;
 
+// Internal dependencies
+use crate::TokenType;
+
 /// This Error type can be used whenever there are Errors
 /// regarding command line arguments.
 #[derive(Debug, Error)]
@@ -21,9 +24,29 @@ pub enum ScanError {
     /// 0: line number
     CharacterAccessError(usize),
     #[error("Scan Error: Unexpected character {0} on line {1}")]
-    /// 0: unexpected character, 1: line number
+    /// 0: unexpected character, 1: starting line number
     UnexpectedCharacter(char, usize),
-    #[error("Scan Error: Unterminated string on line {0}")]
+    #[error("Scan Error: Unterminated string starting on line {0}")]
     /// 0: line number
     UnterminatedString(usize),
+}
+
+/// This error type can be used whenever there are
+/// Errors during the parsing phase
+#[derive(Debug, Error)]
+pub enum ParseError {
+    #[error("Parse Error: Cannot access token at index {0}")]
+    /// 0: token index
+    TokenAccessError(usize),
+    #[error("Parse Error: Cannot access token parameter at index {0}")]
+    /// 0: token index
+    TokenParameterError(usize),
+    #[error("Parse Error: Unterminated grouping.")]
+    UnterminatedGrouping,
+    #[error("Parse Error: Expected expression. Current token: {0}")]
+    /// 0: Current token formatted as String. Should use `format!` for that
+    ExpectedExpression(String),
+    #[error("Parse Error: Expected literal on token {0}")]
+    /// 0: token index
+    NoLiteralOnToken(usize),
 }

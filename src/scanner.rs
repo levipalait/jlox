@@ -56,7 +56,7 @@ impl Scanner {
         }
 
         self.tokens
-            .push(Token::new(TokenType::Eof, String::new(), None, self.line)); // push an EOF token
+            .push(Token::new(TokenType::Eof, String::new(), None, self.line as u32)); // push an EOF token
 
         // If there was an error while scanning, a ScanError gets returned as the Result
         if had_error {
@@ -189,7 +189,7 @@ impl Scanner {
     /// Adds a `Token` to the token vector without any literal
     fn add_token(&mut self, token_type: TokenType) -> Result<()> {
         let lexeme_text = self.get_lexeme_text()?;
-        let token = Token::new(token_type, lexeme_text, None, self.line);
+        let token = Token::new(token_type, lexeme_text, None, self.line as u32);
         self.tokens.push(token);
         Ok(())
     }
@@ -197,7 +197,7 @@ impl Scanner {
     /// Adds a `Token` to the token vector with a literal
     fn add_token_literal(&mut self, token_type: TokenType, literal: Literal) -> Result<()> {
         let lexeme_text = self.get_lexeme_text()?;
-        let token = Token::new(token_type, lexeme_text, Some(literal), self.line);
+        let token = Token::new(token_type, lexeme_text, Some(literal), self.line as u32);
         self.tokens.push(token);
         Ok(())
     }
@@ -224,6 +224,7 @@ impl Scanner {
     /// Gets called when scan_token encounters a " character, so the
     /// String can be correctly saved as a literal token.
     fn handle_string(&mut self) -> Result<()> {
+        let string_start_line = self.line;
         while !self.is_at_end() && self.peek()? != '"' {
             if self.peek()? == '\n' {
                 self.line += 1;
@@ -232,7 +233,7 @@ impl Scanner {
         }
 
         if self.is_at_end() {
-            return Err(ScanError::UnterminatedString(self.line).into());
+            return Err(ScanError::UnterminatedString(string_start_line).into());
         }
 
         self.advance()?; // The closing "

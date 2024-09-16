@@ -5,7 +5,8 @@ use std::fmt::Display;
 use crate::token::Token;
 use crate::literal::Literal;
 
-pub enum Expression {
+#[derive(Debug, PartialEq)]
+pub enum Expression { // I <3 Rust enums
     // Non-Terminals
 
     /// 0: left, 1: operator, 2: right
@@ -18,7 +19,7 @@ pub enum Expression {
     // Terminals
 
     /// 0: value
-    Primary(Literal),
+    Literal(Literal),
 }
 
 impl Display for Expression {
@@ -26,7 +27,7 @@ impl Display for Expression {
         match self {
             Expression::Binary(left, operator, right) => write!(f, "({} {} {})", operator.lexeme(), left, right),
             Expression::Grouping(expr) => write!(f, "(group {})", expr),
-            Expression::Primary(value) => write!(f, "{}", value),
+            Expression::Literal(value) => write!(f, "{}", value),
             Expression::Unary(operator, right) => write!(f, "({} {})", operator.lexeme(), right),
         }
     }

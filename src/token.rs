@@ -11,7 +11,7 @@ pub struct Token {
     token_type: TokenType,
     lexeme: String,
     literal: Option<Literal>, // Literals can be hold directly inside the Token
-    line: usize,
+    line: u32,
 }
 
 impl Token {
@@ -19,7 +19,7 @@ impl Token {
         token_type: TokenType,
         lexeme: String,
         literal: Option<Literal>,
-        line: usize,
+        line: u32,
     ) -> Self {
         Self {
             token_type,
@@ -29,6 +29,8 @@ impl Token {
         }
     }
 
+    // Field access functions
+    
     pub fn token_type(&self) -> TokenType {
         self.token_type.clone()
     }
@@ -41,7 +43,7 @@ impl Token {
         self.literal.clone()
     }
 
-    pub fn line(&self) -> usize {
+    pub fn line(&self) -> u32 {
         self.line
     }
 }

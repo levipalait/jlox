@@ -69,24 +69,13 @@ fn run_prompt() -> Result<()> {
 /// Takes in Lox source code as a `String` and starts the running
 /// process on it.
 fn run(source: String) -> Result<()> {
+
     // -123 * (45.67)
 
-    // let expression = Expression::Binary(
-    //     Box::new(Expression::Unary(
-    //         Token::new(TokenType::Minus, "-".to_string(), None, 1),
-    //         Box::new(Expression::Primary(Literal::Number(123.0))),
-    //     )),
-    //     Token::new(TokenType::Star, "*".to_string(), None, 1),
-    //     Box::new(Expression::Grouping(Box::new(Expression::Primary(Literal::Number(45.67))))),
-    // );
+    let tokens = scanner::scan_tokens(source)?; // Convert source code into tokens
+    let expression = parser::parse(tokens)?;    // Convert tokens into syntax tree
 
-    // println!("{}", expression);
-
-    let tokens = scanner::scan_tokens(source)?;
-
-    for token in tokens {
-        println!("{}", token);
-    }
+    println!("{}", expression);
 
     Ok(())
 }
