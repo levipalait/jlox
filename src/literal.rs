@@ -7,8 +7,7 @@ use std::fmt::Display;
 pub enum Literal {
     String(String),
     Number(f64),
-    True,
-    False,
+    Bool(bool),
     Nil,
 }
 
@@ -17,8 +16,7 @@ impl Display for Literal {
         match self {
             Self::String(s) => write!(f, "{}", s), // just the string
             Self::Number(n) => write!(f, "{}", n), // just the number
-            Self::True => write!(f, "true"),
-            Self::False => write!(f, "false"),
+            Self::Bool(b) => write!(f, "{}", b),   // just the boolean
             Self::Nil => write!(f, "nil"),
         }
     }

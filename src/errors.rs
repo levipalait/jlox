@@ -1,9 +1,6 @@
 // External dependencies
 use thiserror::Error;
 
-// Internal dependencies
-use crate::TokenType;
-
 /// This Error type can be used whenever there are Errors
 /// regarding command line arguments.
 #[derive(Debug, Error)]
@@ -38,9 +35,6 @@ pub enum ParseError {
     #[error("Parse Error: Cannot access token at index {0}")]
     /// 0: token index
     TokenAccessError(usize),
-    #[error("Parse Error: Cannot access token parameter at index {0}")]
-    /// 0: token index
-    TokenParameterError(usize),
     #[error("Parse Error: Unterminated grouping.")]
     UnterminatedGrouping,
     #[error("Parse Error: Expected expression. Current token: {0}")]
@@ -49,4 +43,11 @@ pub enum ParseError {
     #[error("Parse Error: Expected literal on token {0}")]
     /// 0: token index
     NoLiteralOnToken(usize),
+}
+
+/// This error type can be used whenever there is
+/// an Error during code execution.
+#[derive(Debug, Error)]
+pub enum RuntimeError {
+
 }

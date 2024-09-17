@@ -282,8 +282,8 @@ impl Scanner {
         // If it's neither, it's just an identifier.
         match match_keyword(&text) {
             Some(token_type) => match token_type {
-                TokenType::True => self.add_token_literal(token_type, Literal::True),
-                TokenType::False => self.add_token_literal(token_type, Literal::False),
+                TokenType::True => self.add_token_literal(token_type, Literal::Bool(true)),
+                TokenType::False => self.add_token_literal(token_type, Literal::Bool(false)),
                 TokenType::Nil => self.add_token_literal(token_type, Literal::Nil),
                 _ => self.add_token(token_type),
             },
@@ -358,7 +358,7 @@ mod tests {
         let cmp_token = Token::new(TokenType::Equal, "=".to_string(), None, 1);
         assert_eq!(*tokens.get(2).unwrap(), cmp_token);
 
-        let cmp_token = Token::new(TokenType::True, "true".to_string(), Some(Literal::True), 1);
+        let cmp_token = Token::new(TokenType::True, "true".to_string(), Some(Literal::Bool(true)), 1);
         assert_eq!(*tokens.get(3).unwrap(), cmp_token);
 
         let cmp_token = Token::new(TokenType::Semicolon, ";".to_string(), None, 1);

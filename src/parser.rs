@@ -33,9 +33,10 @@ impl Parser {
     }
 
     // Since recursive descent is used, the next function
-    // is the top level and it goes down level by level.
+    // is the lowest level of precedenct and it goes up level by level.
     // each level represents a context-free grammar rule.
 
+    // Lowest level of precedence
     fn expression(&mut self) -> Result<Expression> {
         self.equality()
     }
@@ -110,11 +111,12 @@ impl Parser {
         }
     }
 
+    // Highest level of precedence
     fn primary(&mut self) -> Result<Expression> {
         if self.match_token_types([TokenType::False])? {
-            return Ok(Expression::Literal(Literal::False));
+            return Ok(Expression::Literal(Literal::Bool(false))); // creating already existing literal, fuck it
         } else if self.match_token_types([TokenType::True])? {
-            return Ok(Expression::Literal(Literal::True));
+            return Ok(Expression::Literal(Literal::Bool(true)));
         } else if self.match_token_types([TokenType::Nil])? {
             return Ok(Expression::Literal(Literal::Nil));
         } else if self.match_token_types([TokenType::String, TokenType::Number])? {
@@ -198,7 +200,9 @@ impl Parser {
         }
     }
 
-    // If check returns true, we advance and also return true
+    /// If check returns true, we advance and also return true.
+    /// It takes in the constant generic `N`, which is the size of the
+    /// array of `TokenType`'s.
     fn match_token_types<const N: usize>(&mut self, token_types: [TokenType; N]) -> Result<bool> {
         for token_type in token_types {
             if self.check(token_type)? {
