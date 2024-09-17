@@ -2,7 +2,7 @@
 use anyhow::Result;
 
 // Internal dependencies
-use crate::literal::Literal;
+use crate::value::Value;
 use crate::token::{Token, TokenType};
 use crate::errors::ScanError;
 
@@ -195,7 +195,7 @@ impl Scanner {
     }
 
     /// Adds a `Token` to the token vector with a literal
-    fn add_token_literal(&mut self, token_type: TokenType, literal: Literal) -> Result<()> {
+    fn add_token_with_literal(&mut self, token_type: TokenType, literal: Value) -> Result<()> {
         let lexeme_text = self.get_lexeme_text()?;
         let token = Token::new(token_type, lexeme_text, Some(literal), self.line as u32);
         self.tokens.push(token);
@@ -243,7 +243,7 @@ impl Scanner {
             .get((self.start + 1)..(self.current - 1))
             .ok_or(ScanError::CharacterAccessError(self.line))?
             .to_string(); // Text between ""
-        self.add_token_literal(TokenType::String, Literal::String(value))
+        self.add_token_with_literal(TokenType::String, Value::String(value))
     }
 
     /// Gets called when scan_tokens encounters a digit character, so the
@@ -268,7 +268,7 @@ impl Scanner {
         let lexeme = self.get_lexeme_text()?;
         let value = lexeme.parse::<f64>()?;
 
-        self.add_token_literal(TokenType::Number, Literal::Number(value))
+        self.add_token_with_literal(TokenType::Number, Value::Number(value))
     }
 
     fn handle_identifier(&mut self) -> Result<()> {
@@ -282,9 +282,9 @@ impl Scanner {
         // If it's neither, it's just an identifier.
         match match_keyword(&text) {
             Some(token_type) => match token_type {
-                TokenType::True => self.add_token_literal(token_type, Literal::Bool(true)),
-                TokenType::False => self.add_token_literal(token_type, Literal::Bool(false)),
-                TokenType::Nil => self.add_token_literal(token_type, Literal::Nil),
+                TokenType::True => self.add_token_with_literal(token_type, Value::Bool(true)),
+                TokenType::False => self.add_token_with_literal(token_type, Value::Bool(false)),
+                TokenType::Nil => self.add_token_with_literal(token_type, Value::Nil),
                 _ => self.add_token(token_type),
             },
             None => self.add_token(TokenType::Identifier),
@@ -332,7 +332,7 @@ mod tests {
         let cmp_token = Token::new(
             TokenType::String,
             "\"Hello, World!\"".to_string(),
-            Some(Literal::String("Hello, World!".to_string())),
+            Some(Value::String("Hello, World!".to_string())),
             1,
         );
         assert_eq!(*tokens.get(1).unwrap(), cmp_token);
@@ -358,7 +358,7 @@ mod tests {
         let cmp_token = Token::new(TokenType::Equal, "=".to_string(), None, 1);
         assert_eq!(*tokens.get(2).unwrap(), cmp_token);
 
-        let cmp_token = Token::new(TokenType::True, "true".to_string(), Some(Literal::Bool(true)), 1);
+        let cmp_token = Token::new(TokenType::True, "true".to_string(), Some(Value::Bool(true)), 1);
         assert_eq!(*tokens.get(3).unwrap(), cmp_token);
 
         let cmp_token = Token::new(TokenType::Semicolon, ";".to_string(), None, 1);
@@ -415,7 +415,7 @@ mod tests {
         let cmp_token = Token::new(
             TokenType::Number,
             "123".to_string(),
-            Some(Literal::Number(123.0)),
+            Some(Value::Number(123.0)),
             1,
         );
         assert_eq!(*tokens.get(0).unwrap(), cmp_token);
@@ -423,7 +423,7 @@ mod tests {
         let cmp_token = Token::new(
             TokenType::Number,
             "45.67".to_string(),
-            Some(Literal::Number(45.67)),
+            Some(Value::Number(45.67)),
             1,
         );
         assert_eq!(*tokens.get(1).unwrap(), cmp_token);
@@ -440,7 +440,7 @@ mod tests {
         let cmp_token = Token::new(
             TokenType::String,
             "\"Hello, World!\"".to_string(),
-            Some(Literal::String("Hello, World!".to_string())),
+            Some(Value::String("Hello, World!".to_string())),
             1,
         );
         assert_eq!(*tokens.get(0).unwrap(), cmp_token);
@@ -466,7 +466,7 @@ mod tests {
         let cmp_token = Token::new(
             TokenType::Number,
             "42".to_string(),
-            Some(Literal::Number(42.0)),
+            Some(Value::Number(42.0)),
             2,
         );
         assert_eq!(*tokens.get(3).unwrap(), cmp_token);
