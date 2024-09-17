@@ -49,5 +49,10 @@ pub enum ParseError {
 /// an Error during code execution.
 #[derive(Debug, Error)]
 pub enum RuntimeError {
-
+    #[error("Runtime Error: Operand must be a number.")]
+    NumberOperand,
+    #[error("Runtime Error: Incompatible types.")]
+    IncompatibleTypes,
+    #[error("Runtime Error: Unknown error.")]
+    Unknown,
 }

@@ -4,16 +4,13 @@ use std::io::Write;
 
 // Internal dependencies
 use crate::errors::*;
-use crate::expression::*;
-use crate::token::*;
-use crate::literal::*;
 
 // Modules
 mod errors;
 mod expression;
 mod scanner;
 mod token;
-mod literal;
+mod value;
 mod parser;
 
 /// Takes in command line arguments and decides whether to run
@@ -70,12 +67,14 @@ fn run_prompt() -> Result<()> {
 /// process on it.
 fn run(source: String) -> Result<()> {
 
-    // -123 * (45.67)
-
     let tokens = scanner::scan_tokens(source)?; // Convert source code into tokens
     let expression = parser::parse(tokens)?;    // Convert tokens into syntax tree
 
     println!("{}", expression);
+
+    let value = expression.interpret()?;
+
+    println!("{}", value);
 
     Ok(())
 }

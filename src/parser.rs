@@ -4,23 +4,22 @@ use anyhow::Result;
 // Internal dependencies
 use crate::errors::ParseError;
 use crate::expression::Expression;
-use crate::literal::Literal;
+use crate::value::Value;
 use crate::token::Token;
 use crate::token::TokenType;
 
-// WARNING: PARSER NOT DONE, DOES NOT REPORT SYNTAX ERRORS, BUT
-// PROPAGATES AN ERROR WHEN THE FIRST ONE IS ENCOUNTERED!
-// ONLY FOR TESTING!
-
+/// The only public function of the parser module that is the interface
+/// between the main module (or some other higher level module) and the
+/// whole parsing process. It takes in a collection of tokens and spits
+/// out an Expression, that represents the AST formed by the tokens.
 pub fn parse(tokens: Vec<Token>) -> Result<Expression> {
     let mut parser = Parser::new(tokens);
     parser.expression() // No propagation needed, because parser returns a Result
 }
 
-// ----------CONTINUE HERE-----------
-// Parser now works, but code is not very readable and redundant
-// Apply match and check functions from the book
-
+/// The Parser is a contraption that holds a collection of
+/// Tokens, traverses through them one by one and returns an
+/// AST of expressions.
 struct Parser {
     tokens: Vec<Token>,
     current: usize,
@@ -114,11 +113,11 @@ impl Parser {
     // Highest level of precedence
     fn primary(&mut self) -> Result<Expression> {
         if self.match_token_types([TokenType::False])? {
-            return Ok(Expression::Literal(Literal::Bool(false))); // creating already existing literal, fuck it
+            return Ok(Expression::Literal(Value::Bool(false))); // creating already existing literal, fuck it
         } else if self.match_token_types([TokenType::True])? {
-            return Ok(Expression::Literal(Literal::Bool(true)));
+            return Ok(Expression::Literal(Value::Bool(true)));
         } else if self.match_token_types([TokenType::Nil])? {
-            return Ok(Expression::Literal(Literal::Nil));
+            return Ok(Expression::Literal(Value::Nil));
         } else if self.match_token_types([TokenType::String, TokenType::Number])? {
             return Ok(Expression::Literal(
                 self.previous()?

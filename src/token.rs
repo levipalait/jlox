@@ -2,7 +2,7 @@
 use std::fmt::{Debug, Display};
 
 // Internal dependencies
-use crate::literal::Literal;
+use crate::value::Value;
 
 /// A Token is a piece of String that is parsed from the source code.
 /// It gives it it's meaning.
@@ -10,7 +10,7 @@ use crate::literal::Literal;
 pub struct Token {
     token_type: TokenType,
     lexeme: String,
-    literal: Option<Literal>, // Literals can be hold directly inside the Token
+    literal: Option<Value>, // Literals can be hold directly inside the Token
     line: u32,
 }
 
@@ -18,7 +18,7 @@ impl Token {
     pub fn new(
         token_type: TokenType,
         lexeme: String,
-        literal: Option<Literal>,
+        literal: Option<Value>,
         line: u32,
     ) -> Self {
         Self {
@@ -39,12 +39,8 @@ impl Token {
         self.lexeme.clone()
     }
 
-    pub fn literal(&self) -> Option<Literal> {
+    pub fn literal(&self) -> Option<Value> {
         self.literal.clone()
-    }
-
-    pub fn line(&self) -> u32 {
-        self.line
     }
 }
 
@@ -76,6 +72,7 @@ pub enum TokenType {
     And, Class, Else, False, Fun, For, If, Nil, Or,
     Print, Return, Super, This, True, Var, While,
 
+    // End of file
     Eof,
 }
 
