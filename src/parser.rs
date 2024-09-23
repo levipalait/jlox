@@ -5,26 +5,35 @@ use anyhow::Result;
 use crate::errors::ParseError;
 use crate::obj::expression::Expression;
 use crate::obj::statement::Statement;
-use crate::obj::value::Value;
 use crate::obj::token::Token;
 use crate::obj::token_type::TokenType;
+use crate::obj::value::Value;
 
 /// The only public function of the parser module that is the interface
 /// between the main module (or some other higher level module) and the
 /// whole parsing process. It takes in a collection of tokens and spits
 /// out an Expression, that represents the AST formed by the tokens.
 pub fn parse(tokens: Vec<Token>) -> Result<Vec<Statement>> {
+    let mut had_error = false;
+
     let mut parser = Parser::new(tokens);
     let mut statements: Vec<Statement> = Vec::new();
     while !parser.is_at_end() {
-        if let Ok(stmt) = parser.declaration() { // If the statement parsing fails, we synchronize and continue
-            statements.push(stmt);
-        } else {
-            parser.synchronize()?;
+        match parser.declaration() {
+            Ok(stmt) => statements.push(stmt),
+            Err(e) => {
+                eprintln!("{}", e);
+                had_error = true;
+                parser.synchronize()?;  // When we had an error, we synchronize so we can
+            }                           // report more errors after one occurred
         }
     }
 
-    Ok(statements)
+    if had_error {
+        Err(ParseError::HadError.into())    // If there was an error, we return that
+    } else {
+        Ok(statements)                      // If everything went well, continue on
+    }
 }
 
 /// The Parser is a contraption that holds a collection of
@@ -51,10 +60,11 @@ impl Parser {
 
     fn var_declaration(&mut self) -> Result<Statement> {
         let name = self.consume(TokenType::Identifier, ParseError::ExpectedIdentifier)?;
-        let mut initializer: Option<Expression> = None;
-        if self.match_token_types([TokenType::Equal])? {
-            initializer = Some(self.expression()?);
-        }
+        let initializer: Option<Expression> = if self.match_token_types([TokenType::Equal])? {
+            Some(self.expression()?)
+        } else {
+            None
+        };
         self.consume(TokenType::Semicolon, ParseError::UnterminatedVarDeclaration)?;
         Ok(Statement::Var(name, initializer))
     }
@@ -77,7 +87,10 @@ impl Parser {
 
     fn expression_statement(&mut self) -> Result<Statement> {
         let expr = self.expression()?;
-        self.consume(TokenType::Semicolon, ParseError::UnterminatedExpressionStatement)?;
+        self.consume(
+            TokenType::Semicolon,
+            ParseError::UnterminatedExpressionStatement,
+        )?;
         Ok(Statement::Expression(expr))
     }
 
@@ -202,7 +215,8 @@ impl Parser {
                     .literal()
                     .ok_or(ParseError::NoLiteralOnToken(self.current))?,
             ));
-        } else if self.match_token_types([TokenType::Identifier])? { // If we have an identifier, we return a variable expression
+        } else if self.match_token_types([TokenType::Identifier])? {
+            // If we have an identifier, we return a variable expression
             return Ok(Expression::Variable(self.previous()?));
         } else if self.match_token_types([TokenType::LeftParen])? {
             let expr = self.expression()?; // If we encounter a '(', we start a new expression that is grouped
@@ -237,7 +251,7 @@ impl Parser {
 
             token_type = self.advance()?.token_type();
         }
-        Ok(())
+        Ok(()) // If at the end, synchronization is done, so Ok is returned
     }
 
     // Small helper functions

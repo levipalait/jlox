@@ -46,7 +46,7 @@ impl Scanner {
     /// When `scan_tokens` is called, the scanner gets consumed and only the Vector
     /// of Tokens remains. Scanner cannot be used again (it probably doesn't need to)
     fn scan_tokens(mut self) -> Result<Vec<Token>> {
-        let mut had_error: bool = false;
+        let mut had_error = false;
 
         while !self.is_at_end() {
             self.start = self.current;

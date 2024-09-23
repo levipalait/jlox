@@ -32,6 +32,8 @@ pub enum ScanError {
 /// Errors during the parsing phase
 #[derive(Debug, Error)]
 pub enum ParseError {
+    #[error("Parse Error: At least 1 error occurred while parsing. Aborted!")]
+    HadError,
     #[error("Parse Error: Cannot access token at index {0}")]
     /// 0: token index
     TokenAccessError(usize),
