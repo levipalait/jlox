@@ -49,6 +49,10 @@ pub enum ParseError {
     UnterminatedBlock,
     #[error("Parse Error: Expected identifier.")]
     ExpectedIdentifier,
+    #[error("Parse Error: Expected opening parentheses \"(\"")]
+    ExprectedLeftParen,
+    #[error("Parse Error: Exprected closing parentheses \")\"")]
+    ExpectedRightParen,
     #[error("Parse Error: Expected expression. Current token: {0}")]
     /// 0: Current token formatted as String. Should use `format!` for that
     ExpectedExpression(String),

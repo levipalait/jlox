@@ -74,8 +74,29 @@ impl Parser {
             self.print_statement()
         } else if self.match_token_types([TokenType::LeftBrace])? {
             Ok(Statement::Block(self.block()?))
+        } else if self.match_token_types([TokenType::If])? {
+            self.if_statement()
         } else {
             self.expression_statement()
+        }
+    }
+
+    fn if_statement(&mut self) -> Result<Statement> {
+        self.consume(TokenType::LeftParen, ParseError::ExprectedLeftParen)?;
+        let condition = self.expression()?;
+        self.consume(TokenType::RightParen, ParseError::ExpectedRightParen)?;
+
+        let then_branch = self.statement()?;
+        let else_branch: Option<Statement> = if self.match_token_types([TokenType::Else])? {
+            Some(self.statement()?)
+        } else {
+            None
+        };
+
+        if let Some(stmt) = else_branch {
+            Ok(Statement::If(condition, Box::new(then_branch), Some(Box::new(stmt))))
+        } else {
+            Ok(Statement::If(condition, Box::new(then_branch), None))
         }
     }
 

@@ -64,6 +64,13 @@ impl Interpreter {
             Statement::Expression(expr) => {
                 self.evaluate_expression(expr)?;
             },
+            Statement::If(cond, then, els) => {
+                if is_truthy(self.evaluate_expression(cond)?) { // If truthy, run the then part
+                    self.execute_statement(then)?;
+                } else if let Some(stmt) = els { // If there is an else clause, run that
+                    self.execute_statement(stmt)?;
+                }
+            },
             Statement::Print(expr) => {
                 let value = self.evaluate_expression(expr)?;
                 println!("{}", value);
