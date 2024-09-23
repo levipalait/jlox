@@ -3,18 +3,28 @@ use anyhow::Result;
 
 // Internal dependencies
 use crate::errors::ParseError;
-use crate::expression::Expression;
-use crate::value::Value;
-use crate::token::Token;
-use crate::token::TokenType;
+use crate::obj::expression::Expression;
+use crate::obj::statement::Statement;
+use crate::obj::value::Value;
+use crate::obj::token::Token;
+use crate::obj::token_type::TokenType;
 
 /// The only public function of the parser module that is the interface
 /// between the main module (or some other higher level module) and the
 /// whole parsing process. It takes in a collection of tokens and spits
 /// out an Expression, that represents the AST formed by the tokens.
-pub fn parse(tokens: Vec<Token>) -> Result<Expression> {
+pub fn parse(tokens: Vec<Token>) -> Result<Vec<Statement>> {
     let mut parser = Parser::new(tokens);
-    parser.expression() // No propagation needed, because parser returns a Result
+    let mut statements: Vec<Statement> = Vec::new();
+    while !parser.is_at_end() {
+        if let Ok(stmt) = parser.declaration() { // If the statement parsing fails, we synchronize and continue
+            statements.push(stmt);
+        } else {
+            parser.synchronize()?;
+        }
+    }
+
+    Ok(statements)
 }
 
 /// The Parser is a contraption that holds a collection of
@@ -31,13 +41,81 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
+    fn declaration(&mut self) -> Result<Statement> {
+        if self.match_token_types([TokenType::Var])? {
+            self.var_declaration()
+        } else {
+            self.statement()
+        }
+    }
+
+    fn var_declaration(&mut self) -> Result<Statement> {
+        let name = self.consume(TokenType::Identifier, ParseError::ExpectedIdentifier)?;
+        let mut initializer: Option<Expression> = None;
+        if self.match_token_types([TokenType::Equal])? {
+            initializer = Some(self.expression()?);
+        }
+        self.consume(TokenType::Semicolon, ParseError::UnterminatedVarDeclaration)?;
+        Ok(Statement::Var(name, initializer))
+    }
+
+    fn statement(&mut self) -> Result<Statement> {
+        if self.match_token_types([TokenType::Print])? {
+            self.print_statement()
+        } else if self.match_token_types([TokenType::LeftBrace])? {
+            Ok(Statement::Block(self.block()?))
+        } else {
+            self.expression_statement()
+        }
+    }
+
+    fn print_statement(&mut self) -> Result<Statement> {
+        let expr = self.expression()?;
+        self.consume(TokenType::Semicolon, ParseError::UnterminatedPrintStatement)?;
+        Ok(Statement::Print(expr))
+    }
+
+    fn expression_statement(&mut self) -> Result<Statement> {
+        let expr = self.expression()?;
+        self.consume(TokenType::Semicolon, ParseError::UnterminatedExpressionStatement)?;
+        Ok(Statement::Expression(expr))
+    }
+
+    fn block(&mut self) -> Result<Vec<Statement>> {
+        let mut statements: Vec<Statement> = Vec::new();
+
+        while !self.check(TokenType::RightBrace)? && !self.is_at_end() {
+            statements.push(self.declaration()?);
+        }
+
+        self.consume(TokenType::RightBrace, ParseError::UnterminatedBlock)?;
+
+        Ok(statements)
+    }
+
     // Since recursive descent is used, the next function
     // is the lowest level of precedenct and it goes up level by level.
     // each level represents a context-free grammar rule.
 
     // Lowest level of precedence
     fn expression(&mut self) -> Result<Expression> {
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> Result<Expression> {
+        let expr = self.equality()?;
+
+        if self.match_token_types([TokenType::Equal])? {
+            let value = self.assignment()?;
+
+            if let Expression::Variable(name) = expr {
+                return Ok(Expression::Assign(name, Box::new(value)));
+            }
+
+            return Err(ParseError::InvalidAssignmentTarget.into());
+        }
+
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expression> {
@@ -124,9 +202,11 @@ impl Parser {
                     .literal()
                     .ok_or(ParseError::NoLiteralOnToken(self.current))?,
             ));
+        } else if self.match_token_types([TokenType::Identifier])? { // If we have an identifier, we return a variable expression
+            return Ok(Expression::Variable(self.previous()?));
         } else if self.match_token_types([TokenType::LeftParen])? {
             let expr = self.expression()?; // If we encounter a '(', we start a new expression that is grouped
-            self.consume(TokenType::RightParen)?; // We consume the ')'
+            self.consume(TokenType::RightParen, ParseError::UnterminatedGrouping)?; // We consume the ')'
             return Ok(Expression::Grouping(Box::new(expr)));
         }
 
@@ -191,11 +271,13 @@ impl Parser {
         res
     }
 
-    fn consume(&mut self, token_type: TokenType) -> Result<Token> {
+    /// Advance until the next tokentype (given as parameter) and if not
+    /// possible, return the passed ParseError type.
+    fn consume(&mut self, token_type: TokenType, error: ParseError) -> Result<Token> {
         if self.check(token_type)? {
             self.advance()
         } else {
-            Err(ParseError::UnterminatedGrouping.into())
+            Err(error.into())
         }
     }
 
@@ -218,6 +300,6 @@ impl Parser {
         if self.is_at_end() {
             return Ok(false);
         }
-        return Ok(self.peek()?.token_type() == token_type);
+        Ok(self.peek()?.token_type() == token_type)
     }
 }

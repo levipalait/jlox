@@ -37,12 +37,24 @@ pub enum ParseError {
     TokenAccessError(usize),
     #[error("Parse Error: Unterminated grouping.")]
     UnterminatedGrouping,
+    #[error("Parse Error: Unterminated print statement.")]
+    UnterminatedPrintStatement,
+    #[error("Parse Error: Unterminated expression statement.")]
+    UnterminatedExpressionStatement,
+    #[error("Parse Error: Unterminated variable declaration.")]
+    UnterminatedVarDeclaration,
+    #[error("Parse Error: Unterminated block.")]
+    UnterminatedBlock,
+    #[error("Parse Error: Expected identifier.")]
+    ExpectedIdentifier,
     #[error("Parse Error: Expected expression. Current token: {0}")]
     /// 0: Current token formatted as String. Should use `format!` for that
     ExpectedExpression(String),
     #[error("Parse Error: Expected literal on token {0}")]
     /// 0: token index
     NoLiteralOnToken(usize),
+    #[error("Parse Error: Invalid assignment target.")]
+    InvalidAssignmentTarget,
 }
 
 /// This error type can be used whenever there is
@@ -53,6 +65,8 @@ pub enum RuntimeError {
     NumberOperand,
     #[error("Runtime Error: Incompatible types.")]
     IncompatibleTypes,
+    #[error("Runtime Error: Undefined variable.")]
+    UndefinedVariable,
     #[error("Runtime Error: Unknown error.")]
     Unknown,
 }

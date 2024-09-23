@@ -17,7 +17,7 @@ impl Display for Value {
             Self::String(s) => write!(f, "{}", s), // just the string
             Self::Number(n) => write!(f, "{}", n), // just the number
             Self::Bool(b) => write!(f, "{}", b),   // just the boolean
-            Self::Nil => write!(f, "nil"),
+            Self::Nil => write!(f, "nil"),         // nil
         }
     }
 }

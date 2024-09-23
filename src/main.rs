@@ -6,12 +6,18 @@ use std::io::Write;
 use crate::errors::*;
 
 // Modules
+mod obj {
+    pub mod environment;
+    pub mod expression;
+    pub mod statement;
+    pub mod token_type;
+    pub mod token;
+    pub mod value;
+}
 mod errors;
-mod expression;
-mod scanner;
-mod token;
-mod value;
+mod interpreter;
 mod parser;
+mod scanner;
 
 /// Takes in command line arguments and decides whether to run
 /// jlox on a source file or to open the prompt mode. If nothing
@@ -67,14 +73,10 @@ fn run_prompt() -> Result<()> {
 /// process on it.
 fn run(source: String) -> Result<()> {
 
-    let tokens = scanner::scan_tokens(source)?; // Convert source code into tokens
-    let expression = parser::parse(tokens)?;    // Convert tokens into syntax tree
+    let tokens = scanner::scan_tokens(source)?; // Convert source code into tokens (scanning)
+    let statements = parser::parse(tokens)?;    // Convert tokens into syntax tree (parsing)
 
-    println!("{}", expression);
-
-    let value = expression.interpret()?;
-
-    println!("{}", value);
+    interpreter::interpret(statements)?; // Interpret the syntax tree (execution)
 
     Ok(())
 }

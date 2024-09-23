@@ -2,8 +2,9 @@
 use anyhow::Result;
 
 // Internal dependencies
-use crate::value::Value;
-use crate::token::{Token, TokenType};
+use crate::obj::value::Value;
+use crate::obj::token::Token;
+use crate::obj::token_type::TokenType;
 use crate::errors::ScanError;
 
 /// Only public function of the scanner module. It takes in a raw source code String
