@@ -21,6 +21,8 @@ pub enum Expression {
     Binary(Box<Expression>, Token, Box<Expression>),
     /// 0: expr
     Grouping(Box<Expression>),
+    /// 0: left, 1: operator, 2: right
+    Logical(Box<Expression>, Token, Box<Expression>),
     /// 0: operator, 1: right
     Unary(Token, Box<Expression>),
 
@@ -38,10 +40,11 @@ impl Display for Expression { // recursive printing of expressions
                 write!(f, "({} {} {})", operator.lexeme(), left, right)
             }
             Expression::Grouping(expr) => write!(f, "(group {})", expr),
-            Expression::Literal(value) => write!(f, "{}", value),
-            Expression::Unary(operator, right) => write!(f, "({} {})", operator.lexeme(), right),
+            Expression::Literal(val) => write!(f, "{}", val),
+            Expression::Unary(op, right) => write!(f, "({} {})", op.lexeme(), right),
             Expression::Variable(name) => write!(f, "(var {})", name),
             Expression::Assign(name, expr) => write!(f, "(= {} {})", name.lexeme(), expr),
+            Expression::Logical(left, op, right) => write!(f, "(logical {} {} {})", left, op, right),
         }
     }
 }

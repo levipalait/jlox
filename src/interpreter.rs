@@ -99,6 +99,20 @@ impl Interpreter {
             Expression::Binary(left, op, right) => self.handle_binary(left, op.clone(), right),
             Expression::Grouping(expr) => self.evaluate_expression(expr),
             Expression::Literal(val) => Ok(val.to_owned()),
+            Expression::Logical(left, op, right) => {
+                let left_val = self.evaluate_expression(left)?;
+                if op.token_type() == TokenType::Or {
+                    if is_truthy(left_val.clone()) { // Cloning unnecessary, but idc.
+                        return Ok(left_val);
+                    }
+                } else {
+                    if !is_truthy(left_val.clone()) {
+                        return Ok(left_val);
+                    }
+                }
+
+                self.evaluate_expression(right)
+            }
             Expression::Unary(op, right) => self.handle_unary(op.clone(), right),
             Expression::Variable(name) => self.environment.get(name.clone()),
         }
