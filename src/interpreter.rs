@@ -83,6 +83,11 @@ impl Interpreter {
                 };
                 self.environment.define(name.lexeme(), value);
             },
+            Statement::While(cond, body) => {
+                while is_truthy(self.evaluate_expression(cond)?) {
+                    self.execute_statement(body)?;
+                }
+            }
         };
         Ok(())
     }

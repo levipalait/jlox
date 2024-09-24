@@ -72,6 +72,8 @@ impl Parser {
     fn statement(&mut self) -> Result<Statement> {
         if self.match_token_types([TokenType::Print])? {
             self.print_statement()
+        } else if self.match_token_types([TokenType::While])? {
+            self.while_statement()
         } else if self.match_token_types([TokenType::LeftBrace])? {
             Ok(Statement::Block(self.block()?))
         } else if self.match_token_types([TokenType::If])? {
@@ -125,6 +127,15 @@ impl Parser {
         self.consume(TokenType::RightBrace, ParseError::UnterminatedBlock(self.previous()?.line()))?;
 
         Ok(statements)
+    }
+
+    fn while_statement(&mut self) -> Result<Statement> {
+        self.consume(TokenType::LeftParen, ParseError::ExprectedLeftParen(self.previous()?.line()))?;
+        let condition = self.expression()?;
+        self.consume(TokenType::RightParen, ParseError::ExpectedRightParen(self.previous()?.line()))?;
+        let body = self.statement()?;
+
+        Ok(Statement::While(condition, Box::new(body)))
     }
 
     // Since recursive descent is used, the next function

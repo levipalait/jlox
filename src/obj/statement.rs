@@ -8,4 +8,5 @@ pub enum Statement {
     If(Expression, Box<Statement>, Option<Box<Statement>>),
     Print(Expression),
     Var(Token, Option<Expression>),
+    While(Expression, Box<Statement>),
 }
