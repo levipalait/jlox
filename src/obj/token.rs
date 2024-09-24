@@ -43,6 +43,10 @@ impl Token {
     pub fn literal(&self) -> Option<Value> {
         self.literal.clone()
     }
+
+    pub fn line(&self) -> u32 {
+        self.line
+    }
 }
 
 impl Display for Token {

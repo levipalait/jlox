@@ -59,13 +59,13 @@ impl Parser {
     }
 
     fn var_declaration(&mut self) -> Result<Statement> {
-        let name = self.consume(TokenType::Identifier, ParseError::ExpectedIdentifier)?;
+        let name = self.consume(TokenType::Identifier, ParseError::ExpectedIdentifier(self.previous()?.line()))?;
         let initializer: Option<Expression> = if self.match_token_types([TokenType::Equal])? {
             Some(self.expression()?)
         } else {
             None
         };
-        self.consume(TokenType::Semicolon, ParseError::UnterminatedVarDeclaration)?;
+        self.consume(TokenType::Semicolon, ParseError::UnterminatedVarDeclaration(name.line()))?;
         Ok(Statement::Var(name, initializer))
     }
 
@@ -82,9 +82,9 @@ impl Parser {
     }
 
     fn if_statement(&mut self) -> Result<Statement> {
-        self.consume(TokenType::LeftParen, ParseError::ExprectedLeftParen)?;
+        self.consume(TokenType::LeftParen, ParseError::ExprectedLeftParen(self.previous()?.line()))?;
         let condition = self.expression()?;
-        self.consume(TokenType::RightParen, ParseError::ExpectedRightParen)?;
+        self.consume(TokenType::RightParen, ParseError::ExpectedRightParen(self.previous()?.line()))?;
 
         let then_branch = self.statement()?;
         let else_branch: Option<Statement> = if self.match_token_types([TokenType::Else])? {
@@ -102,7 +102,7 @@ impl Parser {
 
     fn print_statement(&mut self) -> Result<Statement> {
         let expr = self.expression()?;
-        self.consume(TokenType::Semicolon, ParseError::UnterminatedPrintStatement)?;
+        self.consume(TokenType::Semicolon, ParseError::UnterminatedPrintStatement(self.previous()?.line()))?;
         Ok(Statement::Print(expr))
     }
 
@@ -110,7 +110,7 @@ impl Parser {
         let expr = self.expression()?;
         self.consume(
             TokenType::Semicolon,
-            ParseError::UnterminatedExpressionStatement,
+            ParseError::UnterminatedExpressionStatement(self.previous()?.line()),
         )?;
         Ok(Statement::Expression(expr))
     }
@@ -122,7 +122,7 @@ impl Parser {
             statements.push(self.declaration()?);
         }
 
-        self.consume(TokenType::RightBrace, ParseError::UnterminatedBlock)?;
+        self.consume(TokenType::RightBrace, ParseError::UnterminatedBlock(self.previous()?.line()))?;
 
         Ok(statements)
     }
@@ -258,19 +258,19 @@ impl Parser {
             return Ok(Expression::Literal(
                 self.previous()?
                     .literal()
-                    .ok_or(ParseError::NoLiteralOnToken(self.current))?,
+                    .ok_or(ParseError::NoLiteralOnToken(self.peek()?.line()))?,
             ));
         } else if self.match_token_types([TokenType::Identifier])? {
             // If we have an identifier, we return a variable expression
             return Ok(Expression::Variable(self.previous()?));
         } else if self.match_token_types([TokenType::LeftParen])? {
             let expr = self.expression()?; // If we encounter a '(', we start a new expression that is grouped
-            self.consume(TokenType::RightParen, ParseError::UnterminatedGrouping)?; // We consume the ')'
+            self.consume(TokenType::RightParen, ParseError::UnterminatedGrouping(self.previous()?.line()))?; // We consume the ')'
             return Ok(Expression::Grouping(Box::new(expr)));
         }
 
         // If we're at the end or don't match, we error. Otherwise, we return before this line
-        Err(ParseError::ExpectedExpression(format!("{}", self.peek()?)).into())
+        Err(ParseError::ExpectedExpression(self.previous()?.line()).into())
     }
 
     /// When an error is encountered, it ignores any tokens until

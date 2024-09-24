@@ -37,28 +37,28 @@ pub enum ParseError {
     #[error("Parse Error: Cannot access token at index {0}")]
     /// 0: token index
     TokenAccessError(usize),
-    #[error("Parse Error: Unterminated grouping.")]
-    UnterminatedGrouping,
-    #[error("Parse Error: Unterminated print statement.")]
-    UnterminatedPrintStatement,
-    #[error("Parse Error: Unterminated expression statement.")]
-    UnterminatedExpressionStatement,
-    #[error("Parse Error: Unterminated variable declaration.")]
-    UnterminatedVarDeclaration,
-    #[error("Parse Error: Unterminated block.")]
-    UnterminatedBlock,
-    #[error("Parse Error: Expected identifier.")]
-    ExpectedIdentifier,
-    #[error("Parse Error: Expected opening parentheses \"(\"")]
-    ExprectedLeftParen,
-    #[error("Parse Error: Exprected closing parentheses \")\"")]
-    ExpectedRightParen,
-    #[error("Parse Error: Expected expression. Current token: {0}")]
+    #[error("Parse Error: Unterminated grouping on line {0}")]
+    UnterminatedGrouping(u32),
+    #[error("Parse Error: Unterminated print statement on line {0}")]
+    UnterminatedPrintStatement(u32),
+    #[error("Parse Error: Unterminated expression statement on line {0}")]
+    UnterminatedExpressionStatement(u32),
+    #[error("Parse Error: Unterminated variable declaration on line {0}")]
+    UnterminatedVarDeclaration(u32),
+    #[error("Parse Error: Unterminated block on line {0}")]
+    UnterminatedBlock(u32),
+    #[error("Parse Error: Expected identifier on line {0}")]
+    ExpectedIdentifier(u32),
+    #[error("Parse Error: Expected opening parentheses \"(\" on line {0}")]
+    ExprectedLeftParen(u32),
+    #[error("Parse Error: Exprected closing parentheses \")\" on line {0}")]
+    ExpectedRightParen(u32),
     /// 0: Current token formatted as String. Should use `format!` for that
-    ExpectedExpression(String),
-    #[error("Parse Error: Expected literal on token {0}")]
+    #[error("Parse Error: Expected expression on line {0}")]
+    ExpectedExpression(u32),
+    #[error("Parse Error: Expected literal on line {0}")]
     /// 0: token index
-    NoLiteralOnToken(usize),
+    NoLiteralOnToken(u32),
     #[error("Parse Error: Invalid assignment target.")]
     InvalidAssignmentTarget,
 }
