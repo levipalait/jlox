@@ -74,6 +74,8 @@ impl Parser {
             self.print_statement()
         } else if self.match_token_types([TokenType::While])? {
             self.while_statement()
+        } else if self.match_token_types([TokenType::For])? {
+            self.for_statement()
         } else if self.match_token_types([TokenType::LeftBrace])? {
             Ok(Statement::Block(self.block()?))
         } else if self.match_token_types([TokenType::If])? {
@@ -136,6 +138,58 @@ impl Parser {
         let body = self.statement()?;
 
         Ok(Statement::While(condition, Box::new(body)))
+    }
+
+    fn for_statement(&mut self) -> Result<Statement> {
+        // Consume left parentheses
+        self.consume(TokenType::LeftParen, ParseError::ExprectedLeftParen(self.previous()?.line()))?;
+
+        // Parse initializer, condition and increment
+
+        let initializer = if self.match_token_types([TokenType::Semicolon])? {
+            None
+        } else if self.match_token_types([TokenType::Var])? {
+            Some(self.var_declaration()?)
+        } else {
+            Some(self.expression_statement()?)
+        };
+
+        let condition = if !self.check(TokenType::Semicolon)? {
+            self.expression()?
+        } else {
+            // If the condition is empty, it has been omitted, so
+            // the loop should continue forever, which is the equivalent
+            // of a while(true) loop
+            Expression::Literal(Value::Bool(true)) // Setting to true
+        };
+        // Consume semicolon
+        self.consume(TokenType::Semicolon, ParseError::ExpectedSemicolon(self.previous()?.line()))?;
+
+        let increment = if !self.check(TokenType::RightParen)? {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+        self.consume(TokenType::RightParen, ParseError::ExpectedRightParen(self.previous()?.line()))?;
+
+        // Evaluate initializer, condition and increment into a while loop
+
+        let mut body = self.statement()?;
+
+        // Setting the increment expression statement after the body
+        if let Some(expr) = increment {
+            body = Statement::Block(vec![body, Statement::Expression(expr)]);
+        }
+
+        // Creating the while loop from body and the condition
+        body = Statement::While(condition, Box::new(body));
+
+        // Wrapping into a block that executes the initializer and then the body while loop
+        if let Some(stmt) = initializer {
+            body = Statement::Block(vec![stmt, body]);
+        }
+
+        Ok(body)
     }
 
     // Since recursive descent is used, the next function

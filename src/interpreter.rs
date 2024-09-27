@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 // External dependencies
 use anyhow::Result;
 
@@ -21,7 +24,7 @@ pub fn interpret(statements: Vec<Statement>) -> Result<()> {
 
 /// Contraption that stores the currently used environment
 struct Interpreter {
-    environment: Environment,
+    environment: Rc<RefCell<Environment>>,
 }
 
 impl Interpreter {
@@ -50,8 +53,8 @@ impl Interpreter {
     fn execute_statement(&mut self, stmt: &Statement) -> Result<()> {
         match stmt {
             Statement::Block(stmts) => {
-                let prev_env = self.environment.clone(); // Cloning here because readability first
-                self.environment = Environment::new_enclosed(prev_env.clone()); // Also cloning here
+                let prev_env = Rc::clone(&self.environment);
+                self.environment = Environment::new_enclosed(Rc::clone(&self.environment));
                 let result: Result<()> = (|| {              // When error, don't propagate immediately, because
                     for stmt in stmts {                     // the environment first has to be set back to the
                         self.execute_statement(stmt)?;      // previous one.
@@ -81,7 +84,7 @@ impl Interpreter {
                 } else {
                     Value::Nil
                 };
-                self.environment.define(name.lexeme(), value);
+                self.environment.borrow_mut().define_inner(name.lexeme(), value);
             },
             Statement::While(cond, body) => {
                 while is_truthy(self.evaluate_expression(cond)?) {
@@ -98,7 +101,7 @@ impl Interpreter {
         match expr {
             Expression::Assign(name, expr) => {
                 let value = self.evaluate_expression(expr)?;
-                self.environment.assign(name.clone(), value.clone())?; // Clone tokens
+                self.environment.borrow_mut().assign(name.clone(), value.clone())?; // Clone tokens
                 Ok(value)
             },
             Expression::Binary(left, op, right) => self.handle_binary(left, op.clone(), right),
@@ -119,7 +122,7 @@ impl Interpreter {
                 self.evaluate_expression(right)
             }
             Expression::Unary(op, right) => self.handle_unary(op.clone(), right),
-            Expression::Variable(name) => self.environment.get(name.clone()),
+            Expression::Variable(name) => self.environment.borrow().get(name.clone()),
         }
     }
 

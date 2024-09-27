@@ -76,6 +76,10 @@ fn run(source: String) -> Result<()> {
     let tokens = scanner::scan_tokens(source)?; // Convert source code into tokens (scanning)
     let statements = parser::parse(tokens)?;    // Convert tokens into syntax tree (parsing)
 
+    // for stmt in &statements {
+    //     println!("{}", stmt);
+    // }
+
     interpreter::interpret(statements)?;        // Interpret the syntax tree (execution)
 
     Ok(())

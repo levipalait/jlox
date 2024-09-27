@@ -56,6 +56,8 @@ pub enum ParseError {
     /// 0: Current token formatted as String. Should use `format!` for that
     #[error("Parse Error: Expected expression on line {0}")]
     ExpectedExpression(u32),
+    #[error("Parse Error: Expected semicolon on line {0}")]
+    ExpectedSemicolon(u32),
     #[error("Parse Error: Expected literal on line {0}")]
     /// 0: token index
     NoLiteralOnToken(u32),

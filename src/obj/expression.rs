@@ -42,9 +42,9 @@ impl Display for Expression { // recursive printing of expressions
             Expression::Grouping(expr) => write!(f, "(group {})", expr),
             Expression::Literal(val) => write!(f, "{}", val),
             Expression::Unary(op, right) => write!(f, "({} {})", op.lexeme(), right),
-            Expression::Variable(name) => write!(f, "(var {})", name),
+            Expression::Variable(name) => write!(f, "(var {})", name.lexeme()),
             Expression::Assign(name, expr) => write!(f, "(= {} {})", name.lexeme(), expr),
-            Expression::Logical(left, op, right) => write!(f, "(logical {} {} {})", left, op, right),
+            Expression::Logical(left, op, right) => write!(f, "(logical {} {} {})", left, op.lexeme(), right),
         }
     }
 }
